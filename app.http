@@ -51,7 +51,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZ
 
 ### 
 
-GET http://localhost:3000/tweets/8/replies/ 
+GET http://localhost:3000/tweets/1/replies/ 
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZUJpZGVuIiwiaWF0IjoxNjI4MDk5NDc2fQ.TyLFv6Pt6P5NhfMIk0E1ZemXZRvhqBxXsRRlPV5IWxE
 
 
