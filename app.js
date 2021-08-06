@@ -146,7 +146,7 @@ app.get("/user/tweets/feed/", authenticateToken, async (request, response) => {
   const getTweetsQuery = `SELECT *  FROM tweet  INNER JOIN follower ON tweet.user_id = follower.follower_user_id INNER JOIN
     user ON user.user_id = tweet.user_id
     WHERE follower.following_user_id IN (SELECT follower.following_user_id FROM follower WHERE follower.follower_user_id = '${dbUser.user_id}')
-    ORDER BY tweet.date_time DESC, user.username ASC
+    ORDER BY tweet.date_time DESC
     LIMIT 4;
     `;
   const tweets = await database.all(getTweetsQuery);
@@ -211,8 +211,7 @@ app.get(
     const validRequestQuery = `SELECT * FROM tweet INNER JOIN follower ON follower.following_user_id = tweet.user_id
   WHERE  tweet.tweet_id = ${tweetId} AND follower.following_user_id IN (SELECT follower.following_user_id FROM follower WHERE follower.follower_user_id = '${dbUser.user_id}')`;
     const validRequest = await database.get(validRequestQuery);
-    const validate = { tweetId: validRequest.tweet };
-    if (validate.tweetId === undefined) {
+    if (validRequest === undefined) {
       response.status(401);
       response.send("Invalid Request");
     } else {
@@ -242,8 +241,8 @@ app.get(
     const validRequestQuery = `SELECT * FROM tweet INNER JOIN follower ON follower.following_user_id = tweet.user_id
   WHERE  tweet.tweet_id = ${tweetId} AND follower.following_user_id IN (SELECT follower.following_user_id FROM follower WHERE follower.follower_user_id = '${dbUser.user_id}')`;
     const validRequest = await database.get(validRequestQuery);
-    const validate = { tweetId: validRequest.tweet_id };
-    if (validate.reply_id === undefined) {
+
+    if (validRequest === undefined) {
       response.send("Invalid Request");
     } else {
       const replyTweetQuery = `SELECT user.name, reply.reply FROM user INNER JOIN reply ON user.user_id = reply.user_id
@@ -268,16 +267,15 @@ app.get("/user/tweets/", authenticateToken, async (request, response) => {
 app.post("/user/tweets/", authenticateToken, async (request, response) => {
   let { username } = request;
   const { tweet } = request.body;
+  const date = Date.now();
   const selectUserQuery = `SELECT * FROM user WHERE username = '${username}';`;
   const dbUser = await database.get(selectUserQuery);
-  const createTweetQuery = `INSERT INTO 
-  tweet (tweet, user_id, date_time) 
-  VALUES (
-      tweet = '${tweet}',
-      user_id = '${dbUser.user_id}',
-      date_time = Date.now();
-  )`;
+  const createTweetQuery = `
+  INSERT INTO 
+  tweet ( tweet, user_id) 
+  VALUES ( '${tweet}', '${dbUser.user_id}');`;
   const tweetCreated = await database.run(createTweetQuery);
+  console.log(tweetCreated);
   response.send("Created a Tweet");
 });
 
@@ -290,16 +288,14 @@ app.delete(
     const { tweetId } = request.params;
     const selectUserQuery = `SELECT * FROM user WHERE username = '${username}';`;
     const dbUser = await database.get(selectUserQuery);
-    const validRequestQuery = `SELECT * FROM tweet INNER JOIN follower ON follower.following_user_id = tweet.user_id
-  WHERE  tweet.tweet_id = ${tweetId} AND follower.following_user_id IN (SELECT follower.following_user_id FROM follower WHERE follower.follower_user_id = '${dbUser.user_id}')`;
-    const validRequest = await database.get(validRequestQuery);
-    const validate = { tweetId: validRequest.tweet_id };
-    if (validate.tweetId === undefined) {
+    const validateQuery = `SELECT * FROM tweet WHERE user_id = '${dbUser.user_id}' AND tweet_id = ${tweetId}`;
+    const validRequest = await database.get(validateQuery);
+    if (validRequest === undefined) {
       response.status(401);
       response.send("Invalid Request");
     } else {
-      const deleteTweetQuery = `DELETE FROM tweet WHERE tweet.tweet_id = ${tweetId} AND tweet.user_id = '${dbUser.user_id}'`;
-      await database.run(deleteTweetQuery);
+      const deleteTweetQuery = `DELETE FROM tweet WHERE tweet_id = ${tweetId};`;
+      const tweetDeleted = await database.run(deleteTweetQuery);
       response.send("Tweet Removed");
     }
   }
